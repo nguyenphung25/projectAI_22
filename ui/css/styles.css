@@ -1,0 +1,897 @@
+:root {
+  --bg-color: #fdf6f0;
+  --panel-bg: #ffffff;
+  --panel-shadow: rgba(0, 0, 0, 0.1);
+  --text-color: #333333;
+
+  --primary: #7ec8e3;
+  --secondary: #f8b195;
+  --success: #a8e6cf;
+  --danger: #ff8b94;
+  --warning: #ffd3b6;
+
+  --toggle-bg: #b2dfdb;
+  --toggle-checked-bg: #ffab91;
+
+  --border-radius: 12px;
+  --control-gap: 16px;
+  --control-padding: 14px;
+}
+
+.theme-dark {
+  --bg-color: #181818;
+  --panel-bg: #262626;
+  --panel-shadow: rgba(0, 0, 0, 0.5);
+  --text-color: #f0f0f0;
+
+  --primary: #82b1ff;
+  --secondary: #ffab91;
+  --success: #81c784;
+  --danger: #e57373;
+  --warning: #ffb74d;
+
+  --toggle-bg: #4db6ac;
+  --toggle-checked-bg: #f06292;
+}
+
+.theme-sunset {
+  --bg-color: #fff3e0;
+  --panel-bg: #ffe0b2;
+  --panel-shadow: rgba(255, 112, 67, 0.3);
+  --text-color: #4e342e;
+
+  --primary: #ff7043;
+  --secondary: #d7ccc8;
+  --success: #a1887f;
+  --danger: #e64a19;
+  --warning: #ffcc80;
+
+  --toggle-bg: #ff8a65;
+  --toggle-checked-bg: #f44336;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: "Segoe UI", Roboto, sans-serif;
+  transition:
+    background 0.3s,
+    color 0.3s;
+  overflow: hidden;
+}
+/* Layout chính: 3/4 map bên trái, 1/4 panel bên phải */
+#appLayout {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+}
+/* Khu vực map chiếm 75% */
+#mapArea {
+  position: relative;
+  width: 75%;
+  height: 100vh;
+}
+/* Map nằm trọn bên trái */
+#map {
+  height: 100%;
+  width: 100%;
+}
+
+/* Panel chiếm 25% bên phải, không còn đè lên map */
+.control-panel {
+  position: relative;
+  top: auto;
+  right: auto;
+  width: 25%;
+  height: 100vh;
+  box-sizing: border-box;
+  background-color: var(--panel-bg);
+  padding: 20px;
+  border-radius: 0;
+  box-shadow: -4px 0 12px var(--panel-shadow);
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+.control-panel h5 {
+  margin-top: 0;
+  color: var(--text-color);
+  font-size: 1.1rem;
+}
+
+.control-group {
+  margin-bottom: var(--control-gap);
+}
+
+.toggle-switch {
+  position: relative;
+  width: 110px;
+  height: 38px;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+.toggle-input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  background-color: var(--toggle-bg);
+  border-radius: 38px;
+  transition: background-color 0.4s;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 30px;
+  width: 30px;
+  left: 4px;
+  bottom: 4px;
+  background-color: #fff;
+  border-radius: 50%;
+  transition: transform 0.4s;
+}
+
+.toggle-slider:after {
+  content: "User";
+  position: absolute;
+  top: 50%;
+  left: 60%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.toggle-input:checked + .toggle-slider {
+  background-color: var(--toggle-checked-bg);
+}
+
+.toggle-input:checked + .toggle-slider:before {
+  transform: translateX(70px);
+}
+
+.toggle-input:checked + .toggle-slider:after {
+  content: "Admin";
+  left: 30%;
+}
+
+.theme-selector,
+.algorithm-select,
+input[type="number"] {
+  width: 100%;
+  padding: var(--control-padding);
+  margin-bottom: var(--control-gap);
+  border: 2px solid var(--primary);
+  border-radius: var(--border-radius);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  padding: 12px 18px;
+  font-size: 14px;
+  border: none;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: var(--control-gap);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+  color: #fff;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px var(--panel-shadow);
+}
+
+.btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: #fff;
+}
+
+.btn-secondary {
+  background-color: var(--secondary);
+  color: #fff;
+}
+
+.btn-success {
+  background-color: var(--success);
+  color: #fff;
+}
+
+.btn-danger {
+  background-color: var(--danger);
+  color: #fff;
+}
+
+.btn-warning {
+  background-color: var(--warning);
+  color: #fff;
+}
+
+.guest-controls.hide {
+  display: none;
+}
+
+.admin-controls {
+  display: none;
+}
+
+.admin-controls.show {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  #appLayout {
+    flex-direction: column;
+  }
+
+  #mapArea {
+    width: 100%;
+    height: 65vh;
+  }
+
+  .control-panel {
+    width: 100%;
+    height: 35vh;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -4px 12px var(--panel-shadow);
+    padding: 15px;
+  }
+
+  #appHeader {
+    top: 10px;
+    min-width: unset;
+    width: calc(100% - 24px);
+    max-width: none;
+    box-sizing: border-box;
+  }
+
+  #placeSearchInput {
+    min-width: 0;
+  }
+
+  .btn {
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+
+  .toggle-switch {
+    width: 100px;
+    height: 34px;
+  }
+
+  .toggle-slider:before {
+    height: 26px;
+    width: 26px;
+  }
+}
+
+/* Theme selection button */
+.theme-dropdown {
+  display: none;
+  position: absolute;
+  top: 76px;
+  right: 20px;
+  left: auto;
+  background-color: var(--panel-bg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  z-index: 1100;
+}
+
+.theme-toggle-btn.active + .theme-dropdown {
+  display: block;
+}
+
+.theme-toggle-btn:hover {
+  background-color: var(--secondary);
+}
+
+/* Theme dropdown */
+.theme-dropdown {
+  display: none;
+  position: fixed;
+  top: 70px;
+  left: 20px;
+  right: auto;
+  background-color: var(--panel-bg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  z-index: 1000;
+}
+.theme-dropdown button {
+  width: 100%;
+  padding: 12px;
+  text-align: left;
+  background-color: var(--bg-color);
+  border: none;
+  color: var(--text-color);
+  font-size: 14px;
+  border-radius: 12px;
+  transition: background-color 0.2s;
+}
+
+.theme-dropdown button:hover {
+  background-color: var(--primary);
+  color: white;
+}
+
+.theme-toggle-btn.active + .theme-dropdown {
+  display: block;
+}
+
+.admin-controls {
+  max-height: 305px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.admin-controls::-webkit-scrollbar {
+  width: 4px;
+}
+
+.admin-controls::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 2px;
+}
+
+.admin-controls::-webkit-scrollbar-thumb:hover {
+  background-color: #999;
+}
+
+/* styles.css */
+
+/* ----- Tùy chỉnh Popup của Leaflet ----- */
+
+/* Container chính của popup do Leaflet tạo */
+.synced-leaflet-popup .leaflet-popup-content-wrapper {
+  background-color: var(--panel-bg);
+  /* Đồng bộ màu nền với control panel */
+  color: var(--text-color);
+  /* Đồng bộ màu chữ */
+  border-radius: var(--border-radius);
+  /* Đồng bộ bo góc */
+  box-shadow: 0 4px 12px var(--panel-shadow);
+  /* Đồng bộ đổ bóng */
+  padding: 10px;
+  /* Giảm padding mặc định của Leaflet một chút nếu cần */
+}
+
+/* Phần mũi tên (tip) của popup */
+.synced-leaflet-popup .leaflet-popup-tip {
+  background: var(--panel-bg);
+  /* Đồng bộ màu nền cho mũi tên */
+  /* box-shadow không cần thiết ở đây hoặc tùy chỉnh nếu muốn */
+}
+
+/* Nội dung bên trong mà chúng ta tự định nghĩa */
+.custom-leaflet-popup {
+  font-family: "Segoe UI", Roboto, sans-serif;
+  /* Đảm bảo font chữ đồng bộ */
+  line-height: 1.6;
+}
+
+.custom-leaflet-popup h5 {
+  /* Tiêu đề "Cạnh: X - Y" */
+  margin-top: 5px;
+  margin-bottom: 8px;
+  font-size: 1.05rem;
+  /* LUÔN LÀ MÀU ĐEN/XÁM ĐẬM */
+  /* Hoặc dùng #000000 cho màu đen tuyền */
+  font-weight: 600;
+}
+
+.custom-leaflet-popup .popup-status {
+  /* Dòng trạng thái */
+  display: block;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  /* LUÔN LÀ MÀU ĐEN/XÁM ĐẬM */
+  /* Hoặc dùng #000000 !important; cho màu đen tuyền */
+  opacity: 0.9;
+}
+.custom-leaflet-popup .popup-hr {
+  border: none;
+  border-top: 1px solid rgba(var(--text-color-rgb, 0, 0, 0), 0.1);
+  /* Tạo đường kẻ mờ */
+  /* Cần định nghĩa --text-color-rgb nếu muốn dùng, ví dụ 51,51,51 */
+  /* Hoặc dùng màu cố định: border-top: 1px solid #e0e0e0; */
+  margin: 10px 0;
+}
+
+.theme-dark .custom-leaflet-popup .popup-hr {
+  /* Đường kẻ cho theme tối */
+  border-top: 1px solid rgba(var(--text-color-rgb, 240, 240, 240), 0.15);
+  /* Ví dụ: 240,240,240 */
+  /* Hoặc dùng màu cố định: border-top: 1px solid #444; */
+}
+
+.custom-leaflet-popup p {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.leaflet-popup-content {
+  word-wrap: break-word;
+}
+
+/* Tùy chỉnh thêm cho các nút bên trong popup nếu cần */
+.custom-leaflet-popup .btn-popup {
+  width: calc(100% - 10px);
+  /* Làm cho nút hơi thụt vào một chút */
+  margin: 5px auto;
+  /* Căn giữa và tạo khoảng cách */
+  padding: 8px 12px;
+  /* Điều chỉnh padding cho nút trong popup */
+  font-size: 0.9rem;
+  /* Cỡ chữ nút trong popup */
+  display: block;
+  /* Đảm bảo nút chiếm toàn bộ chiều rộng đã cho */
+}
+
+/* Nút đóng mặc định của Leaflet */
+.synced-leaflet-popup a.leaflet-popup-close-button {
+  color: var(--text-color) !important;
+  /* Màu nút đóng */
+  padding: 8px 8px 0 0;
+  transition: color 0.2s ease-in-out;
+}
+
+.synced-leaflet-popup a.leaflet-popup-close-button:hover {
+  color: var(--danger) !important;
+  /* Màu nút đóng khi hover */
+  background-color: transparent !important;
+  /* Bỏ nền khi hover nếu có */
+}
+
+/* Style cho popup nhỏ gọn hơn */
+.compact-point-popup .leaflet-popup-content-wrapper {
+  padding: 5px 8px;
+  /* Giảm padding */
+  min-width: 120px;
+  /* Đặt chiều rộng tối thiểu nếu cần */
+  max-width: 180px;
+  /* Giới hạn chiều rộng tối đa */
+  font-size: 0.8rem;
+  /* Giảm cỡ chữ */
+  line-height: 1.4;
+  /* Giảm khoảng cách dòng */
+}
+
+.compact-point-popup .leaflet-popup-content b,
+.compact-point-popup .leaflet-popup-content strong {
+  font-size: 0.85rem;
+  /* Cỡ chữ cho phần chữ đậm */
+  display: block;
+  /* Để <br> hoạt động tốt hơn */
+  margin-bottom: 2px;
+  /* Khoảng cách nhỏ sau chữ đậm */
+}
+
+.compact-point-popup .leaflet-popup-content br {
+  display: none;
+  /* Ẩn <br> nếu muốn tiêu đề và ID trên cùng một dòng để tiết kiệm không gian */
+  /* Hoặc điều chỉnh margin/padding của các phần tử khác */
+}
+
+.compact-point-popup .leaflet-popup-content {
+  margin: 0;
+  /* Bỏ margin mặc định của content nếu có */
+}
+
+/* Đảm bảo các popup này vẫn kế thừa style nền, bo góc từ synced-leaflet-popup nếu bạn muốn */
+.error-leaflet-popup.compact-point-popup .leaflet-popup-content-wrapper,
+.info-leaflet-popup.compact-point-popup .leaflet-popup-content-wrapper,
+.start-point-popup.compact-point-popup .leaflet-popup-content-wrapper,
+/* Áp dụng cho điểm bắt đầu */
+.end-point-popup.compact-point-popup .leaflet-popup-content-wrapper {
+  /* Áp dụng cho điểm kết thúc */
+  /* Các style này có thể được kế thừa từ .synced-leaflet-popup .leaflet-popup-content-wrapper */
+  /* Nếu không, bạn cần thêm lại các thuộc tính như background-color, color, border-radius ở đây */
+  /* Ví dụ: */
+  background-color: var(--panel-bg);
+  color: var(--text-color);
+  border-radius: var(--border-radius);
+  /* Giảm bo góc nếu muốn */
+  box-shadow: 0 1px 5px var(--panel-shadow);
+  /* Giảm đổ bóng */
+}
+
+.compact-point-popup .leaflet-popup-tip {
+  /* Tương tự, kế thừa hoặc style lại tip nếu cần */
+  background: var(--panel-bg);
+}
+
+/* Điều chỉnh nút đóng cho popup nhỏ hơn nếu cần */
+.compact-point-popup a.leaflet-popup-close-button {
+  padding: 4px 4px 0 0;
+  /* Giảm padding nút đóng */
+  font-size: 14px;
+  /* Giảm kích thước font nút đóng */
+}
+
+/* Màu sắc cho chữ "Điểm bắt đầu" và "Điểm kết thúc" vẫn như cũ */
+.start-point-popup .leaflet-popup-content strong {
+  color: var(--success);
+  /* Hoặc màu bạn đã chọn, ví dụ: #007bff cho xanh dương */
+}
+
+.end-point-popup .leaflet-popup-content strong {
+  color: var(--danger);
+  /* Hoặc màu bạn đã chọn, ví dụ: #dc3545 cho đỏ */
+}
+
+/* styles.css */
+/* ... (các style hiện có của bạn) ... */
+
+/* ----- Kiểu Mới cho Collapsible Sections (Dễ nhìn hơn) ----- */
+
+.collapsible-group {
+  margin-bottom: calc(var(--control-gap) / 2);
+  /* Khoảng cách nhỏ hơn giữa các nhóm */
+  /* Bỏ viền của group đi để thoáng hơn */
+  border-radius: calc(var(--border-radius) - 6px);
+  /* Bo góc nhẹ nhàng nếu muốn giữ lại chút */
+  background-color: rgba(var(--text-color-rgb, 0, 0, 0), 0.03);
+  /* Nền rất nhẹ cho cả group */
+  overflow: hidden;
+  /* Giữ lại để bo góc hoạt động */
+}
+
+.theme-dark .collapsible-group {
+  background-color: rgba(var(--text-color-rgb, 240, 240, 240), 0.05);
+}
+
+.collapsible-trigger {
+  /* Ghi đè lại style của .btn nếu cần, hoặc bỏ class .btn trong HTML */
+  display: block;
+  /* Đảm bảo chiếm cả dòng */
+  width: 100%;
+  background-color: transparent;
+  /* Nền trong suốt, hòa vào group */
+  color: var(--text-color);
+  /* Màu chữ theo theme */
+  padding: 12px 15px;
+  /* Tăng padding cho dễ nhấn */
+  text-align: left;
+  font-weight: 600;
+  /* Chữ đậm hơn một chút */
+  font-size: 0.95rem;
+  /* Cỡ chữ */
+  border: none;
+  /* Bỏ viền */
+  border-bottom: 1px solid transparent;
+  /* Thêm đường viền ẩn để giữ layout ổn định khi hover */
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  position: relative;
+  margin-bottom: 0 !important;
+  /* Ghi đè margin của .btn nếu có */
+}
+
+.collapsible-trigger:hover {
+  background-color: rgba(var(--text-color-rgb, 0, 0, 0), 0.05);
+  /* Hiệu ứng hover nhẹ */
+  border-bottom-color: rgba(var(--text-color-rgb, 0, 0, 0), 0.1);
+  /* Hiện viền dưới nhẹ khi hover */
+}
+
+.theme-dark .collapsible-trigger:hover {
+  background-color: rgba(var(--text-color-rgb, 240, 240, 240), 0.08);
+  border-bottom-color: rgba(var(--text-color-rgb, 240, 240, 240), 0.2);
+}
+
+/* Icon mũi tên mới (sử dụng + và - hoặc chevron) */
+.collapsible-trigger::after {
+  /* content: '+'; */
+  /* Dấu cộng khi đóng */
+  content: "\276F";
+  /* Chevron kiểu > */
+  font-family: sans-serif;
+  /* Đảm bảo dấu hiển thị đúng */
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%) rotate(0deg);
+  transition: transform 0.3s ease;
+  font-size: 1.1em;
+  /* Kích thước icon */
+  font-weight: bold;
+  color: var(--primary);
+  /* Màu icon theo màu primary */
+  opacity: 0.8;
+}
+
+.collapsible-trigger.active::after {
+  /* content: '−'; */
+  /* Dấu trừ khi mở */
+  transform: translateY(-50%) rotate(90deg);
+  /* Xoay chevron xuống */
+}
+
+/* Nội dung có thể thu gọn/mở rộng */
+.collapsible-content {
+  padding: 20px 15px 15px 15px;
+  /* Tăng padding trên cùng để tách khỏi trigger */
+  display: none;
+  /* Mặc định ẩn */
+  background-color: transparent;
+  /* Bỏ nền riêng, dùng nền của group */
+  border-top: 1px solid rgba(var(--text-color-rgb, 0, 0, 0), 0.1);
+  /* Đường kẻ mỏng phân cách với trigger */
+}
+
+.theme-dark .collapsible-content {
+  border-top: 1px solid rgba(var(--text-color-rgb, 240, 240, 240), 0.15);
+}
+
+/* Style cho các control-group bên trong collapsible-content */
+.collapsible-content .control-group {
+  margin-bottom: var(--control-gap);
+  /* Khoảng cách giữa các control */
+}
+
+.collapsible-content .control-group:last-child {
+  margin-bottom: 0;
+}
+
+/* Style cho input-group và label bên trong */
+.collapsible-content .input-group {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  /* Thêm khoảng cách dưới input group */
+}
+
+.collapsible-content .input-group label {
+  display: block;
+  margin-bottom: 6px;
+  /* Khoảng cách giữa label và input */
+  font-size: 0.85rem;
+  font-weight: 500;
+  /* Hơi đậm một chút */
+  color: var(--text-color);
+  opacity: 0.9;
+}
+
+.collapsible-content .input-group input[type="number"] {
+  width: 100%;
+  /* Input chiếm hết chiều rộng */
+  padding: 10px;
+  /* Giảm padding của input một chút */
+  /* Kế thừa các style khác từ rule chung cho input */
+}
+
+/* Style cho các nút bên trong collapsible-content */
+.collapsible-content .btn {
+  margin-bottom: 10px;
+  /* Khoảng cách giữa các nút bên trong */
+}
+
+.collapsible-content .btn:last-child {
+  margin-bottom: 0;
+}
+
+.collapsible-content .control-group > .btn:not(:last-child) {
+  /* Thêm khoảng cách phải nếu nút không phải nút cuối cùng trong group,
+        hoặc giữ margin-bottom nếu chúng xếp chồng lên nhau */
+  /* margin-right: 10px; */
+  /* Nếu nút nằm cùng hàng */
+}
+
+#appHeader {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background-color: var(--panel-bg, #fff8ee);
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 320px;
+  max-width: 460px;
+  width: fit-content;
+}
+
+.place-search-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+#placeSearchInput {
+  flex: 1;
+  padding: 10px 10px;
+  min-width: 280px;
+  border: 1px solid var(--primary, #ccc);
+  border-radius: var(--border-radius, 8px);
+  background-color: var(--panel-bg, #fff);
+  color: var(--text-color);
+  font-size: 14px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+#placeSearchInput::placeholder {
+  color: rgba(80, 80, 80, 0.5);
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  transition: opacity 0.2s ease;
+}
+
+#placeSearchInput:focus::placeholder {
+  opacity: 0.3;
+}
+
+#placeSearchButton {
+  padding: 10px 10px;
+  background-color: var(--primary, #ff6f3c);
+  color: #f0f0f0;
+  border: none;
+  border-radius: var(--border-radius, 8px);
+  font-weight: bold;
+  font-size: 14px;
+  height: 100%;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+#placeSearchButton:hover {
+  background-color: var(--danger, #ff5a20);
+}
+
+.search-results-container {
+  background-color: var(--panel-bg, #fff);
+  border: 1px solid var(--primary, #ccc);
+  border-radius: var(--border-radius, 8px);
+  max-height: 200px;
+  overflow-y: auto;
+  width: 100%;
+  box-shadow: 0 2px 6px var(--panel-shadow, rgba(0, 0, 0, 0.08));
+  z-index: 1001;
+  position: relative;
+}
+
+.search-result-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--primary, #eee);
+  transition: background-color 0.2s ease;
+  color: var(--text-color, #333);
+  background-color: var(--panel-bg, #fff);
+}
+
+.search-result-item:hover {
+  background-color: var(--warning, rgba(0, 0, 0, 0.05));
+}
+
+.search-icon {
+  display: flex;
+  align-items: center;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+
+.search-icon img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  opacity: 0.8;
+}
+#mapArea {
+  position: relative !important;
+}
+
+.theme-toggle-btn {
+  position: absolute !important;
+  top: 20px !important;
+  right: 20px !important;
+  left: auto !important;
+  width: 48px !important;
+  height: 48px !important;
+  background-color: var(--primary) !important;
+  border-radius: 50% !important;
+  cursor: pointer;
+  font-size: 20px !important;
+  color: white !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  z-index: 99999 !important;
+
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.theme-dropdown {
+  display: none;
+  position: absolute !important;
+  top: 76px !important;
+  right: 20px !important;
+  left: auto !important;
+  background-color: var(--panel-bg) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  z-index: 99999 !important;
+}
+
+.theme-toggle-btn.active + .theme-dropdown {
+  display: block !important;
+}
+.algorithm-select-hidden {
+  display: none;
+}
+
+.algorithm-title {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.algorithm-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: var(--control-gap);
+}
+
+.algorithm-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 2px solid var(--primary);
+  border-radius: var(--border-radius);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.algorithm-option:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px var(--panel-shadow);
+}
+
+.algorithm-option input[type="radio"] {
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.algorithm-option:has(input[type="radio"]:checked) {
+  background-color: var(--primary);
+  color: white;
+  box-shadow: 0 4px 10px var(--panel-shadow);
+}
