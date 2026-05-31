@@ -23,7 +23,7 @@ body {
   height: 100%;
   margin: 0;
   overflow: hidden;
-  font-family: Arial, Helvetica, sans-serif !important;
+  font-family: "Inter", Arial, Helvetica, sans-serif !important;
   color: var(--text);
   background: var(--bg);
 }
@@ -1531,4 +1531,36 @@ html.theme-sunset .leaflet-tile {
   font-size: 12px;
   font-weight: 800;
   border-radius: 8px;
+}
+/* Search suggestion dropdown */
+#searchDropdown {
+  margin-top: 6px;
+  padding: 8px !important;
+  border-radius: 14px !important;
+  background: #ffffff !important;
+  border: 1px solid #dbe3ef !important;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12) !important;
+  overflow: hidden;
+}
+
+.sdi {
+  padding: 10px 14px !important;
+  margin-bottom: 4px;
+  border-radius: 10px;
+  color: #1e293b;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.sdi:last-child {
+  margin-bottom: 0;
+}
+
+.sdi:hover {
+  background: #eef2ff;
+  color: #4338ca;
+  transform: translateX(2px);
 }

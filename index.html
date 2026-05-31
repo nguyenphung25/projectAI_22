@@ -12,7 +12,12 @@
     />
 
     <!-- CSS -->
-
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="ui/css/style2.css" />
     <link rel="icon" type="image/png" href="ui/css/favicon.png" />
 
@@ -82,7 +87,7 @@
               <input
                 id="stationSearch"
                 type="text"
-                placeholder="Type station name..."
+                placeholder="Station name..."
                 autocomplete="off"
               />
               <div id="searchDropdown"></div>
@@ -116,7 +121,9 @@
                 <option value="DFS">DFS</option>
                 <option value="IDDFS">Iterative Deepening DFS</option>
               </select>
-
+              <button id="btnFindPath" class="btn primary-btn">
+                🔍 Tìm đường
+              </button>
               <button id="btnCompare" class="btn primary-btn">
                 <span class="icon">▣</span> Compare All Algorithms
               </button>

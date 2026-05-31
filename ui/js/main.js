@@ -403,7 +403,7 @@ $("stationSearch").addEventListener("input", function () {
   matches.forEach((s) => {
     const d = document.createElement("div");
     d.className = "sdi";
-    d.innerHTML = `${s.name}<div class="sdi-sub">${s.lat.toFixed(4)}, ${s.lon.toFixed(4)}</div>`;
+    d.innerHTML = `${s.name}`;
     d.addEventListener("click", () => {
       map.setView([s.lat, s.lon], 14);
       $("stationSearch").value = "";
@@ -467,8 +467,11 @@ function placeNext(lat, lng, name) {
         `<b>${setup ? "Station B" : "End"}${name ? ": " + name : ""}</b>`,
       )
       .openPopup();
-    if (!setup) runPathfind();
-    else setStatus("Two points selected — click Apply to set ban/flood");
+    if (!setup) {
+      setStatus("Đã chọn đủ 2 điểm — bấm Tìm đường để chạy.");
+    } else {
+      setStatus("Two points selected — click Apply to set ban/flood");
+    }
   }
 }
 
@@ -615,8 +618,26 @@ $("togglePaths").addEventListener("click", () =>
 // Re-run pathfinding immediately when the user picks a different algorithm
 // (only when both start & end are already set, otherwise nothing to draw yet).
 $("algorithmSelect").addEventListener("change", () => {
-  if (clickCoords.length >= 2) runPathfind();
+  if (clickCoords.length >= 2) {
+    setStatus("Đã đổi thuật toán — bấm Tìm đường để chạy lại.");
+  }
 });
+
+if (btnFindPath) {
+  btnFindPath.addEventListener("click", () => {
+    if (clickCoords.length < 2) {
+      setStatus("⚠ Hãy chọn điểm bắt đầu và điểm kết thúc trước.");
+      showToast(
+        "Vui lòng chọn đủ 2 điểm trên bản đồ trước khi tìm đường.",
+        "warn",
+        2000,
+      );
+      return;
+    }
+
+    runPathfind();
+  });
+}
 
 /* ───── Find path ───── */
 function runPathfind() {
