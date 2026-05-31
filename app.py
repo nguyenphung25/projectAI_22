@@ -5,18 +5,17 @@ import re
 import time
 from typing import Dict, List, Optional, Tuple
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
-
-from algorithm.bfs import bfs
-from algorithm.dfs import dfs
-from algorithm.dijkstra import dijkstra
-from algorithm.iterative_deepening_dfs import iddfs
-from algorithm.uniform_cost_search import uniform_cost_search
 
 app = Flask(__name__)
 CORS(app)
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+@app.route("/")
+def home():
+    return send_from_directory(BASE_DIR, "index.html")
 ALGORITHMS = {
     "Dijkstra": dijkstra,
     "BFS": bfs,
