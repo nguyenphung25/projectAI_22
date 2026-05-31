@@ -319,6 +319,18 @@ function redrawSetups() {
           .bindTooltip(s.label, { sticky: true })
           .addTo(setupLayer),
       );
+    } else if (s.type === "station") {
+      (s.coords || []).forEach((p) => {
+        L.circleMarker(p, {
+          radius: 9,
+          color: "#dc2626",
+          weight: 3,
+          fillColor: "#fee2e2",
+          fillOpacity: 0.9,
+        })
+          .bindTooltip(s.label, { sticky: true })
+          .addTo(setupLayer);
+      });
     }
   });
 }
@@ -955,7 +967,46 @@ function addRoadOrCongestionClick(lat, lng) {
     else submitRoad();
   }
 }
+function submitStationClosure() {
+  const input = $("stationClosureInput");
+  const stationName = input ? input.value.trim() : "";
 
+  if (!stationName) {
+    setStatus("⚠ Nhập tên ga cần tạm bỏ.");
+    showToast("Vui lòng nhập tên ga cần tạm bỏ.", "warn", 2000);
+    return;
+  }
+
+  setStatus("Applying station closure…");
+
+  fetch(`${API}/setup_station_closure`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      station_name: stationName,
+    }),
+  })
+    .then((r) =>
+      r.ok
+        ? r.json()
+        : r.json().then((d) => Promise.reject(d.error || "error")),
+    )
+    .then((res) => {
+      applySetupsResponse(res);
+
+      if (input) input.value = "";
+
+      clickCoords = [];
+      clearResult();
+
+      setStatus(`✅ Đã tạm bỏ ga: ${stationName}`);
+      showToast(`Đã tạm bỏ ga: ${stationName}`, "info", 2000);
+    })
+    .catch((e) => {
+      setStatus("❌ " + e);
+      showToast("Không thể tạm bỏ ga.\n" + e, "error", 2000);
+    });
+}
 function submitRoad() {
   const direction = $("roadDirection").value || "both";
   setStatus("Applying road closure…");
@@ -1121,7 +1172,19 @@ document.addEventListener("keydown", (e) => {
     setStatus("Cancelled (Esc).");
   }
 });
+const btnCloseStation = $("btnCloseStation");
+if (btnCloseStation) {
+  btnCloseStation.addEventListener("click", submitStationClosure);
+}
 
+const stationClosureInput = $("stationClosureInput");
+if (stationClosureInput) {
+  stationClosureInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      submitStationClosure();
+    }
+  });
+}
 /* ───── Stop map clicks on the UI ───── */
 ["panel", "stats", "mode-badge", "statusbar", "compare-panel"].forEach((id) => {
   const el = $(id);

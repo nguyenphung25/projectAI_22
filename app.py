@@ -121,6 +121,7 @@ def _public_setups() -> List[dict]:
             "factor": s.get("factor"),
             "start_id": s.get("start_id"),
             "end_id": s.get("end_id"),
+            "station_id": s.get("station_id"),
         }
         for s in SETUPS
     ]
@@ -142,7 +143,12 @@ def _point_in_polygon(lat: float, lon: float, polygon: List[List[float]]) -> boo
         j = i
     return inside
 
-
+def _closed_station_ids() -> set:
+    return {
+        s.get("station_id")
+        for s in SETUPS
+        if s.get("type") == "station" and s.get("station_id")
+    }
 def _segments_intersect(
     p1: List[float], p2: List[float], p3: List[float], p4: List[float]
 ) -> bool:
@@ -195,16 +201,28 @@ def _point_to_segment_distance_sq(
 def _restore_edges(edges):
     for a, b, w in edges:
         ADJACENCY.setdefault(a, {})[b] = w
+def _undo_setup(s):
+    # Xóa các cạnh bypass đã thêm
+    for a, b in s.get("added_edges", []):
+        if b in ADJACENCY.get(a, {}):
+            del ADJACENCY[a][b]
 
+    # Khôi phục các cạnh gốc đã xóa
+    _restore_edges(s.get("edges", []))
 
 def _nearest_node(lat: float, lon: float) -> Optional[str]:
+    closed = _closed_station_ids()
+
     best, best_d = None, float("inf")
     for nid, n in NODES.items():
+        if nid in closed:
+            continue
+
         d = (n["lat"] - lat) ** 2 + (n["lon"] - lon) ** 2
         if d < best_d:
             best, best_d = nid, d
-    return best
 
+    return best
 
 def _nearest_edge(lat: float, lon: float) -> Optional[Tuple[str, str]]:
     """Endpoints (u, v) of the railway edge whose segment is closest to (lat, lon)."""
@@ -487,6 +505,23 @@ def compare_path():
             results.append({"algorithm": algo, "error": str(e)})
     return jsonify(results)
 
+def _find_station_by_name(name: str) -> Optional[str]:
+    if not name:
+        return None
+
+    q = name.strip().lower()
+
+    # Ưu tiên khớp chính xác
+    for nid, n in NODES.items():
+        if n["name"].strip().lower() == q:
+            return nid
+
+    # Sau đó cho phép khớp gần đúng
+    for nid, n in NODES.items():
+        if q in n["name"].strip().lower():
+            return nid
+
+    return None
 
 @app.route("/setup_road", methods=["POST"])
 def setup_road():
@@ -583,7 +618,61 @@ def setup_area():
     })
     return jsonify({"setups": _public_setups()})
 
+@app.route("/setup_station_closure", methods=["POST"])
+def setup_station_closure():
+    data = request.get_json() or {}
+    station_name = data.get("station_name", "")
 
+    station_id = _find_station_by_name(station_name)
+
+    if not station_id:
+        return jsonify({"error": f"Station not found: {station_name}"}), 404
+
+    outgoing = dict(ADJACENCY.get(station_id, {}))
+
+    incoming = {}
+    for a in ADJACENCY.keys():
+        if station_id in ADJACENCY.get(a, {}):
+            incoming[a] = ADJACENCY[a][station_id]
+
+    if not outgoing and not incoming:
+        return jsonify({"error": "Station is already closed or has no active edges"}), 400
+
+    saved = []
+
+    for b, w in list(outgoing.items()):
+        saved.append((station_id, b, w))
+        del ADJACENCY[station_id][b]
+
+    for a, w in list(incoming.items()):
+        saved.append((a, station_id, w))
+        del ADJACENCY[a][station_id]
+
+    added_edges = []
+
+    # nối ga trước -> ga sau để tuyến không bị gãy
+    for a, w_in in incoming.items():
+        for b, w_out in outgoing.items():
+            if a == b:
+                continue
+
+            new_weight = w_in + w_out
+            old_weight = ADJACENCY.get(a, {}).get(b)
+
+            if old_weight is None or new_weight < old_weight:
+                ADJACENCY.setdefault(a, {})[b] = new_weight
+                added_edges.append((a, b))
+
+    SETUPS.append({
+        "type": "station",
+        "label": f"🚉 Tạm đóng ga: {NODES[station_id]['name']}",
+        "station_id": station_id,
+        "edges": saved,
+        "added_edges": added_edges,
+        "coords": [[NODES[station_id]["lat"], NODES[station_id]["lon"]]],
+    })
+
+    return jsonify({"setups": _public_setups()})
 @app.route("/setup_congestion", methods=["POST"])
 def setup_congestion():
     """Multiply the weight of the railway edge nearest to the user's drawn line by `factor`."""
@@ -630,7 +719,7 @@ def restore_last_setup():
     for i in range(len(SETUPS) - 1, -1, -1):
         if stype is None or SETUPS[i]["type"] == stype:
             s = SETUPS.pop(i)
-            _restore_edges(s["edges"])
+            _undo_setup(s)
             return jsonify({"setups": _public_setups()})
     return jsonify({"error": f"No {stype or 'any'} setup to restore"}), 404
 
@@ -641,7 +730,7 @@ def delete_setup():
     if not isinstance(idx, int) or idx < 0 or idx >= len(SETUPS):
         return jsonify({"error": "Invalid index"}), 400
     s = SETUPS.pop(idx)
-    _restore_edges(s["edges"])
+    _undo_setup(s)
     return jsonify({"setups": _public_setups()})
 
 
