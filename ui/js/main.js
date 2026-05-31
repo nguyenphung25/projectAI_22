@@ -13,7 +13,20 @@ L.control.zoom({ position: "bottomleft" }).addTo(map);
 const railwayLayer = L.layerGroup().addTo(map);
 const stationLayer = L.layerGroup().addTo(map);
 const setupLayer = L.layerGroup().addTo(map);
-const resultLayer = L.layerGroup().addTo(map);
+const resultLayer = L.layerGroup().addTo(map);  // start/end pins (user-clicked)
+const pathLayer = L.layerGroup().addTo(map);    // drawn path(s) — single or compare
+
+// Per-algorithm visual style. Distinct color + dash pattern so overlapping paths
+// stay distinguishable on the map and match the legend swatches in the compare table.
+const ALGO_STYLE = {
+  Dijkstra: { color: "#ff2d2d", weight: 6, dashArray: null },
+  UCS:      { color: "#38c4b8", weight: 5, dashArray: "10,6" },
+  BFS:      { color: "#f5c842", weight: 5, dashArray: "6,6" },
+  DFS:      { color: "#f5a623", weight: 4, dashArray: "4,4" },
+  IDDFS:    { color: "#c956d6", weight: 4, dashArray: "2,7" },
+};
+const _defaultAlgoStyle = { color: "#999", weight: 3, dashArray: null };
+const algoStyle = (name) => ALGO_STYLE[name] || _defaultAlgoStyle;
 
 /* ───── State ───── */
 let stations = []; // {id,name,lat,lon}
@@ -89,6 +102,7 @@ function nearestStation(lat, lng) {
 
 function clearResult() {
   resultLayer.clearLayers();
+  pathLayer.clearLayers();
   startMarker = endMarker = null;
   $("stats").style.display = "none";
   $("compare-panel").style.display = "none";
@@ -341,12 +355,21 @@ $("togglePaths").addEventListener("click", () =>
   map.hasLayer(railwayLayer) ? map.removeLayer(railwayLayer) : map.addLayer(railwayLayer),
 );
 
+// Re-run pathfinding immediately when the user picks a different algorithm
+// (only when both start & end are already set, otherwise nothing to draw yet).
+$("algorithmSelect").addEventListener("change", () => {
+  if (clickCoords.length >= 2) runPathfind();
+});
+
 /* ───── Find path ───── */
 function runPathfind() {
   if (clickCoords.length < 2) return;
   const algorithm = $("algorithmSelect").value;
   setStatus("🔍 Running " + algorithm + "…");
   hideToast();
+  // Wipe any prior single-path / compare overlay so the new run isn't drawn on top.
+  pathLayer.clearLayers();
+  $("compare-panel").style.display = "none";
   fetch(`${API}/find_path`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -368,6 +391,8 @@ function runPathfind() {
       if (!res || !res.path_coords || res.path_coords.length < 2) {
         return Promise.reject(res && res.error ? res.error : "No path found between the selected points.");
       }
+      const style = algoStyle(res.algorithm);
+
       // 1) Dashed connector lines from click → nearest station
       if (res.start_path) {
         L.polyline(res.start_path, {
@@ -375,7 +400,7 @@ function runPathfind() {
           weight: 2.5,
           opacity: 0.9,
           dashArray: "5,6",
-        }).addTo(resultLayer);
+        }).addTo(pathLayer);
       }
       if (res.end_path) {
         L.polyline(res.end_path, {
@@ -383,7 +408,7 @@ function runPathfind() {
           weight: 2.5,
           opacity: 0.9,
           dashArray: "5,6",
-        }).addTo(resultLayer);
+        }).addTo(pathLayer);
       }
 
       // 2) Small markers on the snapped start/end stations
@@ -392,7 +417,7 @@ function runPathfind() {
           radius: 5, color: "#fff", weight: 2,
           fillColor: "#4caf7d", fillOpacity: 1,
         })
-          .addTo(resultLayer)
+          .addTo(pathLayer)
           .bindTooltip("Start station");
       }
       if (res.end_station) {
@@ -400,25 +425,26 @@ function runPathfind() {
           radius: 5, color: "#fff", weight: 2,
           fillColor: "#e8492a", fillOpacity: 1,
         })
-          .addTo(resultLayer)
+          .addTo(pathLayer)
           .bindTooltip("End station");
       }
 
-      // 3) Halo + bright red core for the chosen path
+      // 3) Halo + colored core for the chosen path (color matches current algo)
       const pathCoords = res.path_coords || [];
       if (pathCoords.length >= 2) {
         L.polyline(pathCoords, {
           color: "#000",
-          weight: 11,
+          weight: style.weight + 5,
           opacity: 0.35,
-        }).addTo(resultLayer);
+        }).addTo(pathLayer);
         L.polyline(pathCoords, {
-          color: "#ff2d2d",
-          weight: 6,
+          color: style.color,
+          weight: style.weight,
           opacity: 1,
+          dashArray: style.dashArray,
           lineCap: "round",
           lineJoin: "round",
-        }).addTo(resultLayer);
+        }).addTo(pathLayer);
       }
 
       // 4) Small dots on intermediate stations along the path
@@ -426,11 +452,11 @@ function runPathfind() {
         if (i === 0 || i === pathCoords.length - 1) return;
         L.circleMarker(c, {
           radius: 3.5,
-          color: "#ff2d2d",
+          color: style.color,
           fillColor: "#fff",
           fillOpacity: 1,
           weight: 1.5,
-        }).addTo(resultLayer);
+        }).addTo(pathLayer);
       });
 
       if (pathCoords.length) {
@@ -473,17 +499,52 @@ function runPathfind() {
 $("btnCompare").addEventListener("click", () => {
   if (clickCoords.length < 2) return setStatus("⚠ Pick start and end first.");
   setStatus("📊 Comparing algorithms…");
+  hideToast();
+  // Drop the single-algo path; compare draws its own overlay.
+  pathLayer.clearLayers();
+  $("stats").style.display = "none";
   fetch(`${API}/compare_path`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ start: clickCoords[0], end: clickCoords[1] }),
   })
-    .then((r) => r.json())
+    .then((r) =>
+      r.ok
+        ? r.json()
+        : r.json().catch(() => ({})).then((d) => Promise.reject(d.error || `HTTP ${r.status}`)),
+    )
     .then((results) => {
       const best = results.reduce(
         (b, r) => (!r.error && (!b || r.cost_km < b.cost_km) ? r : b),
         null,
       );
+
+      // Draw every successful path on the map, thickest first so thinner ones lie on top.
+      const drawable = results.filter((r) => !r.error && r.path_coords && r.path_coords.length >= 2);
+      drawable
+        .slice()
+        .sort((a, b) => algoStyle(b.algorithm).weight - algoStyle(a.algorithm).weight)
+        .forEach((r) => {
+          const s = algoStyle(r.algorithm);
+          L.polyline(r.path_coords, {
+            color: s.color,
+            weight: s.weight,
+            opacity: 0.9,
+            dashArray: s.dashArray,
+            lineCap: "round",
+            lineJoin: "round",
+          })
+            .bindTooltip(
+              `<b>${r.algorithm}</b><br>${r.cost_km} km · ~${r.travel_min} min · ${r.nodes_expanded} expanded`,
+              { sticky: true },
+            )
+            .addTo(pathLayer);
+        });
+      if (drawable.length) {
+        const allCoords = drawable.flatMap((r) => r.path_coords);
+        map.fitBounds(L.polyline(allCoords).getBounds(), { padding: [60, 60] });
+      }
+
       $("compare-table").innerHTML =
         `<table><thead><tr>
           <th>Algorithm</th><th style="text-align:right">Dist</th>
@@ -491,12 +552,14 @@ $("btnCompare").addEventListener("click", () => {
           <th style="text-align:right">ms</th></tr></thead><tbody>` +
         results
           .map((r) => {
+            const s = algoStyle(r.algorithm);
+            const swatch = `<span class="algo-swatch" style="background:${s.color}"></span>`;
             if (r.error)
-              return `<tr><td>${r.algorithm}</td><td colspan="4" class="err" style="text-align:center">${r.error}</td></tr>`;
+              return `<tr><td>${swatch}${r.algorithm}</td><td colspan="4" class="err" style="text-align:center">${r.error}</td></tr>`;
             const cls = best && r.algorithm === best.algorithm ? ' class="best"' : "";
             const star = best && r.algorithm === best.algorithm ? " ⭐" : "";
             return `<tr${cls}>
-              <td>${r.algorithm}${star}</td>
+              <td>${swatch}${r.algorithm}${star}</td>
               <td style="text-align:right">${r.cost_km} km</td>
               <td style="text-align:right">${r.travel_min} m</td>
               <td style="text-align:right">${r.nodes_expanded}</td>
@@ -505,12 +568,20 @@ $("btnCompare").addEventListener("click", () => {
           .join("") +
         "</tbody></table>";
       $("compare-panel").style.display = "block";
-      setStatus("📊 Comparison done.");
+      setStatus(`📊 Comparison done — ${drawable.length}/${results.length} paths drawn.`);
     })
-    .catch((e) => setStatus("❌ " + e));
+    .catch((e) => {
+      const msg = typeof e === "string" ? e : (e && e.message) || "Unknown error";
+      setStatus("❌ " + msg);
+      showToast("So sánh thuật toán thất bại.\n" + msg, "error", 8000);
+    });
 });
 
-$("btnCloseCompare").addEventListener("click", () => ($("compare-panel").style.display = "none"));
+$("btnCloseCompare").addEventListener("click", () => {
+  $("compare-panel").style.display = "none";
+  // Restore the single-algorithm path for the currently selected dropdown value.
+  if (clickCoords.length >= 2) runPathfind();
+});
 
 /* ───── Setup sub-modes (Road / Area / Congestion) ───── */
 

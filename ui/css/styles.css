@@ -222,6 +222,14 @@ select:focus, input[type="text"]:focus { border-color: var(--teal); }
 #compare-table td { padding: 5px 6px; border-bottom: 1px solid rgba(42, 47, 62, 0.4); }
 #compare-table tr.best td { color: var(--gold); }
 #compare-table .err { color: var(--accent); }
+.algo-swatch {
+  display: inline-block;
+  width: 16px; height: 4px;
+  margin-right: 6px;
+  border-radius: 2px;
+  vertical-align: middle;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.15);
+}
 #btnCloseCompare { margin-top: 8px; justify-content: center; }
 
 #statusbar {

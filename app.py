@@ -372,8 +372,11 @@ def compare_path():
                     "algorithm": algo,
                     "cost_km": round(cost_m / 1000, 3),
                     "travel_min": round(cost_m / 1000 / DEFAULT_SPEED_KMH * 60, 1),
+                    "nodes_in_path": len(path),
                     "nodes_expanded": len(explored or []),
                     "elapsed_ms": round(elapsed, 1),
+                    "path": path,
+                    "path_coords": _path_coords(path),
                 })
             else:
                 results.append({"algorithm": algo, "error": "No path"})
