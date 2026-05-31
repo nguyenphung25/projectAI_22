@@ -16,13 +16,13 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 @app.route("/")
 def home():
     return send_from_directory(BASE_DIR, "index.html")
-ALGORITHMS = {
-    "Dijkstra": dijkstra,
-    "BFS": bfs,
-    "DFS": dfs,
-    "IDDFS": iddfs,
-    "UCS": uniform_cost_search,
-}
+    ALGORITHMS = {
+        "Dijkstra": dijkstra,
+        "BFS": bfs,
+        "DFS": dfs,
+        "IDDFS": iddfs,
+        "UCS": uniform_cost_search,
+    }
 DEFAULT_SPEED_KMH = 35.0  # subway-ish
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
