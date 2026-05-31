@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en" class="theme-light">
+  <head>
+    <meta charset="UTF-8" />
+    <title>PathFinder</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Leaflet CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+    />
+
+    <!-- CSS -->
+
+    <link rel="stylesheet" href="ui/css/style2.css" />
+    <link rel="icon" type="image/png" href="ui/css/favicon.png" />
+
+    <style>
+      #stats.collapsed > :not(.path-result-title) {
+        display: none !important;
+      }
+
+      #stats.collapsed {
+        width: auto !important;
+        min-width: 260px;
+        max-height: none !important;
+        overflow: hidden !important;
+        padding: 16px 18px !important;
+      }
+
+      #stats.collapsed .path-result-title {
+        margin-bottom: 0 !important;
+        padding-bottom: 0 !important;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="app-shell">
+      <!-- Sidebar -->
+      <aside id="panel">
+        <div id="panel-header">
+          <div class="brand">
+            <div class="brand-icon">⌖</div>
+            <div class="title">PathFinder</div>
+          </div>
+
+          <div class="theme-menu">
+            <button id="themeToggle" type="button" title="Change theme">
+              ⚙
+            </button>
+            <div id="themeDropdown" class="hidden">
+              <button type="button" class="theme-option" data-theme="light">
+                ☀️ Light Mode
+              </button>
+              <button type="button" class="theme-option" data-theme="dark">
+                🌙 Dark Mode
+              </button>
+              <button type="button" class="theme-option" data-theme="sunset">
+                🌅 Sunset Mode
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="role-wrap">
+          <label class="role-toggle" title="Switch role">
+            <input type="checkbox" id="roleToggle" />
+            <span class="role-option role-guest">GUEST</span>
+            <span class="role-option role-admin">ADMIN</span>
+            <span class="role-slider"></span>
+            <span class="role-label" id="roleLabel">GUEST</span>
+          </label>
+        </div>
+
+        <div id="panel-body">
+          <!-- Station Search -->
+          <section class="panel-section" id="station-search-section">
+            <div class="section-title">⌖ STATION SEARCH</div>
+            <div class="input-shell">
+              <input
+                id="stationSearch"
+                type="text"
+                placeholder="Type station name..."
+                autocomplete="off"
+              />
+              <div id="searchDropdown"></div>
+            </div>
+          </section>
+
+          <!-- Configuration -->
+          <section class="panel-section">
+            <div class="section-title">☷ CONFIGURATION</div>
+
+            <div id="actionSelect" class="mode-radio-group">
+              <label class="mode-radio active">
+                <input type="radio" name="mode" value="FindPath" checked />
+                <span class="radio-dot"></span>
+                <span>🔍 Find Path</span>
+              </label>
+
+              <label class="mode-radio">
+                <input type="radio" name="mode" value="SetupMap" />
+                <span class="radio-dot"></span>
+                <span>⚙️ Setup</span>
+              </label>
+            </div>
+
+            <div id="findpath-section">
+              <div class="field-label">Algorithm Selection</div>
+              <select id="algorithmSelect">
+                <option value="Dijkstra">Dijkstra</option>
+                <option value="UCS">Uniform Cost Search</option>
+                <option value="BFS">BFS</option>
+                <option value="DFS">DFS</option>
+                <option value="IDDFS">Iterative Deepening DFS</option>
+              </select>
+
+              <button id="btnCompare" class="btn primary-btn">
+                <span class="icon">▣</span> Compare All Algorithms
+              </button>
+            </div>
+          </section>
+
+          <!-- Admin Setup -->
+          <section
+            id="setup-section"
+            class="panel-section"
+            style="display: none"
+          >
+            <div id="setup-active-banner">● Admin Setup Mode Active</div>
+
+            <div class="setup-block road-card">
+              <div class="block-title"><span>🚫</span> Road Closure</div>
+              <select id="roadDirection">
+                <option value="both" selected>Both directions ↔</option>
+                <option value="forward">A to B only →</option>
+                <option value="backward">B to A only ←</option>
+              </select>
+              <div class="button-row">
+                <button id="btnToggleRoad" class="btn danger" data-mode="road">
+                  Enable Closure
+                </button>
+                <button
+                  id="btnRestoreRoad"
+                  class="icon-btn"
+                  data-type="road"
+                  title="Restore last"
+                >
+                  ↶
+                </button>
+              </div>
+            </div>
+
+            <div class="setup-block area-card">
+              <div class="block-title"><span>▧</span> Area Restriction</div>
+              <div class="button-row two">
+                <button id="btnToggleArea" class="btn soft" data-mode="area">
+                  Draw Area
+                </button>
+                <button id="btnSubmitArea" class="btn primary-btn no-margin">
+                  Submit
+                </button>
+              </div>
+              <button id="btnRestoreArea" class="btn muted-btn">
+                Restore Last Area
+              </button>
+            </div>
+
+            <div class="setup-block congestion-card">
+              <div class="block-title row-title">
+                <span>🚦 Traffic Congestion</span>
+                <label class="factor-pill">
+                  ×
+                  <input
+                    id="congestionFactor"
+                    type="number"
+                    value="2"
+                    min="1.1"
+                    max="20"
+                    step="0.1"
+                  />
+                </label>
+              </div>
+              <div class="button-row">
+                <button
+                  id="btnToggleCongestion"
+                  class="btn warning"
+                  data-mode="congestion"
+                >
+                  Set Congestion
+                </button>
+                <button
+                  id="btnRestoreCongestion"
+                  class="icon-btn"
+                  data-type="congestion"
+                  title="Restore last"
+                >
+                  ↶
+                </button>
+              </div>
+            </div>
+
+            <button id="btnClearSetup" class="btn cancel-btn">
+              × Cancel current action
+            </button>
+          </section>
+
+          <!-- Map Layers -->
+          <section class="panel-section layer-section">
+            <div class="section-title">◇ MAP LAYERS</div>
+            <div class="button-row two">
+              <button id="toggleStations" class="btn layer-btn">
+                <span class="yellow-dot"></span> Stations
+              </button>
+              <button id="togglePaths" class="btn layer-btn">
+                <span class="line-dot"></span> Routes
+              </button>
+            </div>
+          </section>
+
+          <!-- Active Setups -->
+          <section class="panel-section active-section">
+            <div class="setup-list-header">
+              <div class="section-title">⚠ Notifications</div>
+              <button id="btnResetSetups" class="reset-btn">RESET ALL</button>
+            </div>
+            <div id="setup-items"></div>
+          </section>
+
+          <div class="hint" id="hint-text">Click map twice: start → end</div>
+        </div>
+      </aside>
+
+      <!-- Map -->
+      <main id="map-area">
+        <div id="map"></div>
+        <div id="mode-badge" class="find">FIND PATH</div>
+      </main>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="hidden">
+      <span class="toast-icon">⚠</span>
+      <span class="toast-msg"></span>
+      <button class="toast-close" aria-label="Close">×</button>
+    </div>
+
+    <!-- Path Result -->
+    <div id="stats">
+      <button
+        id="pathResultToggle"
+        class="stat-title path-result-title"
+        type="button"
+        aria-expanded="true"
+      >
+        <span class="path-result-arrow">▼</span>
+        PATH
+      </button>
+      <div class="row">
+        <span class="key">Algorithm</span
+        ><span class="val accent" id="s-algo">—</span>
+      </div>
+      <div class="row">
+        <span class="key">Distance</span
+        ><span class="val gold" id="s-dist">—</span>
+      </div>
+      <div class="row">
+        <span class="key">Est. Time</span
+        ><span class="val teal" id="s-time-est">—</span>
+      </div>
+      <div class="row">
+        <span class="key">Nodes in path</span
+        ><span class="val" id="s-nodes">—</span>
+      </div>
+      <div class="row">
+        <span class="key">Nodes expanded</span
+        ><span class="val teal" id="s-expanded">—</span>
+      </div>
+      <div class="row">
+        <span class="key">Calc time</span><span class="val" id="s-time">—</span>
+      </div>
+      <div id="waypoints-section">
+        <div class="stat-subtitle">▸ List Station</div>
+        <div id="waypoints-list"></div>
+      </div>
+    </div>
+
+    <!-- Algorithm Comparison -->
+    <div id="compare-panel">
+      <div class="stat-title">📊 Algorithm Comparison</div>
+      <div id="compare-table"></div>
+      <button id="btnCloseCompare" class="btn">Close</button>
+    </div>
+
+    <!-- Status Bar -->
+    <div id="statusbar">
+      <div class="dot"></div>
+      <span id="status-text">Ready — click on the map to set start point</span>
+      <span id="coord-display"></span>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
+
+    <!-- Map data -->
+    <script src="data/fileJs/nodes_latlon.js"></script>
+    <script src="data/fileJs/nodes.js"></script>
+    <script src="data/fileJs/adj_list.js"></script>
+    <script src="data/fileJs/adj_list_with_weights.js"></script>
+    <script src="data/fileJs/metro_shapes.js"></script>
+
+    <!-- Main JS -->
+    <script src="ui/js/main.js"></script>
+
+    <!-- Theme + role label sync -->
+    <script>
+      (function () {
+        const html = document.documentElement;
+        const btn = document.getElementById("themeToggle");
+        const dropdown = document.getElementById("themeDropdown");
+        const options = document.querySelectorAll(".theme-option");
+
+        function setTheme(theme) {
+          html.classList.remove("theme-light", "theme-dark", "theme-sunset");
+          html.classList.add("theme-" + theme);
+          localStorage.setItem("dcPathfinderTheme", theme);
+          options.forEach((option) => {
+            option.classList.toggle("active", option.dataset.theme === theme);
+          });
+        }
+
+        setTheme(localStorage.getItem("dcPathfinderTheme") || "light");
+
+        btn?.addEventListener("click", function (event) {
+          event.stopPropagation();
+          dropdown?.classList.toggle("hidden");
+        });
+
+        options.forEach((option) => {
+          option.addEventListener("click", function () {
+            setTheme(option.dataset.theme);
+            dropdown?.classList.add("hidden");
+          });
+        });
+
+        document.addEventListener("click", function () {
+          dropdown?.classList.add("hidden");
+        });
+      })();
+
+      (function () {
+        const roleToggle = document.getElementById("roleToggle");
+        const roleLabel = document.getElementById("roleLabel");
+
+        function syncRoleLabel() {
+          if (roleLabel && roleToggle) {
+            roleLabel.textContent = roleToggle.checked ? "ADMIN" : "GUEST";
+          }
+        }
+
+        roleToggle?.addEventListener("change", syncRoleLabel);
+        syncRoleLabel();
+      })();
+      (function () {
+        const statsPanel = document.getElementById("stats");
+        const titleBtn = document.getElementById("pathResultToggle");
+        const arrow = titleBtn?.querySelector(".path-result-arrow");
+
+        if (!statsPanel || !titleBtn) return;
+
+        function syncPathResultTitle() {
+          const collapsed = statsPanel.classList.contains("collapsed");
+          if (arrow) arrow.textContent = collapsed ? "▶" : "▼";
+          titleBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        }
+
+        titleBtn.addEventListener("click", function () {
+          statsPanel.classList.toggle("collapsed");
+          syncPathResultTitle();
+        });
+
+        syncPathResultTitle();
+      })();
+    </script>
+  </body>
+</html>

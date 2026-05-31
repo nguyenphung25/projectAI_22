@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Washington DC Pathfinder</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="ui/css/styles.css" />
+    <link rel="icon" type="image/png" href="ui/css/favicon.png" />
+  </head>
+  <body>
+    <div id="map"></div>
+
+    <!-- Side panel -->
+    <div id="panel">
+      <div id="panel-header">
+        <div class="title">DC Pathfinder</div>
+        <label class="role-toggle">
+          <input type="checkbox" id="roleToggle" />
+          <span class="role-label" id="roleLabel">GUEST</span>
+        </label>
+      </div>
+
+      <div id="panel-body">
+        <!-- Station search -->
+        <div>
+          <div class="label">Station Search</div>
+          <div style="position: relative">
+            <input id="stationSearch" type="text" placeholder="Type station name…" autocomplete="off" />
+            <div id="searchDropdown"></div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Mode -->
+        <div id="mode-row">
+          <div class="label">Mode</div>
+          <select id="actionSelect">
+            <option value="FindPath">🔍 Find Path</option>
+            <option value="SetupMap">⚙️ Setup Map (Admin)</option>
+          </select>
+        </div>
+
+        <!-- Find Path -->
+        <div id="findpath-section">
+          <div class="label">Algorithm</div>
+          <select id="algorithmSelect">
+            <option value="Dijkstra">Dijkstra</option>
+            <option value="UCS">Uniform Cost Search</option>
+            <option value="BFS">BFS</option>
+            <option value="DFS">DFS</option>
+            <option value="IDDFS">Iterative Deepening DFS</option>
+          </select>
+          <div style="height: 6px"></div>
+          <button id="btnCompare" class="btn"><span class="icon">📊</span> Compare All</button>
+        </div>
+
+        <!-- Setup Map (admin only) -->
+        <div id="setup-section" style="display: none">
+          <div id="setup-active-banner">● No setup active — pick one below</div>
+
+          <!-- 1) Road Closure -->
+          <div class="setup-block">
+            <div class="block-title">🚫 Road Closure</div>
+            <div class="label">Direction</div>
+            <select id="roadDirection">
+              <option value="both" selected>↔ Both directions</option>
+              <option value="forward">→ A to B only</option>
+              <option value="backward">← B to A only</option>
+            </select>
+            <div style="height: 4px"></div>
+            <button id="btnToggleRoad" class="btn danger" data-mode="road">
+              <span class="icon">⚡</span> Enable Closure
+            </button>
+            <div style="height: 4px"></div>
+            <button id="btnRestoreRoad" class="btn" data-type="road">
+              <span class="icon">↶</span> Restore last
+            </button>
+          </div>
+
+          <!-- 2) Area Closure -->
+          <div class="setup-block">
+            <div class="block-title">🛑 Area Closure</div>
+            <button id="btnToggleArea" class="btn danger" data-mode="area">
+              <span class="icon">⚡</span> Enable Area Mode
+            </button>
+            <div style="height: 4px"></div>
+            <button id="btnSubmitArea" class="btn">
+              <span class="icon">✓</span> Submit Area
+            </button>
+            <div style="height: 4px"></div>
+            <button id="btnRestoreArea" class="btn" data-type="area">
+              <span class="icon">↶</span> Restore last
+            </button>
+          </div>
+
+          <!-- 3) Traffic Congestion -->
+          <div class="setup-block">
+            <div class="block-title">🚦 Traffic Congestion</div>
+            <div class="label">Factor (× weight)</div>
+            <input id="congestionFactor" type="number" value="2" min="1.1" max="20" step="0.1" />
+            <div style="height: 4px"></div>
+            <button id="btnToggleCongestion" class="btn danger" data-mode="congestion">
+              <span class="icon">⚡</span> Enable Congestion
+            </button>
+            <div style="height: 4px"></div>
+            <button id="btnRestoreCongestion" class="btn" data-type="congestion">
+              <span class="icon">↶</span> Restore last
+            </button>
+          </div>
+
+          <button id="btnClearSetup" class="btn" style="margin-top: 4px">
+            ✖ Cancel current action
+          </button>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Layers -->
+        <div>
+          <div class="label">Layers</div>
+          <button id="toggleStations" class="btn"><span class="icon">🟡</span> Stations</button>
+          <div style="height: 6px"></div>
+          <button id="togglePaths" class="btn"><span class="icon">╌</span> Routes</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Setup list -->
+        <div>
+          <div class="setup-list-header">
+            <div class="label" style="margin-bottom: 0">⚠ Active Setups</div>
+            <button id="btnResetSetups" class="reset-btn">Reset All</button>
+          </div>
+          <div id="setup-items"></div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="hint" id="hint-text">Click map twice: start → end</div>
+      </div>
+    </div>
+
+    <div id="mode-badge" class="find">FIND PATH</div>
+
+    <!-- Toast notifications (errors / warnings) -->
+    <div id="toast" class="hidden">
+      <span class="toast-icon">⚠</span>
+      <span class="toast-msg"></span>
+      <button class="toast-close" aria-label="Close">×</button>
+    </div>
+
+    <!-- Result stats -->
+    <div id="stats">
+      <div class="stat-title">▶ Path Result</div>
+      <div class="row"><span class="key">Algorithm</span><span class="val accent" id="s-algo">—</span></div>
+      <div class="row"><span class="key">Distance</span><span class="val gold" id="s-dist">—</span></div>
+      <div class="row"><span class="key">Est. Time</span><span class="val teal" id="s-time-est">—</span></div>
+      <div class="row"><span class="key">Nodes in path</span><span class="val" id="s-nodes">—</span></div>
+      <div class="row"><span class="key">Nodes expanded</span><span class="val teal" id="s-expanded">—</span></div>
+      <div class="row"><span class="key">Calc time</span><span class="val" id="s-time">—</span></div>
+      <div id="waypoints-section" style="margin-top: 8px">
+        <div class="stat-subtitle">▸ Waypoints</div>
+        <div id="waypoints-list"></div>
+      </div>
+    </div>
+
+    <!-- Compare panel -->
+    <div id="compare-panel">
+      <div class="stat-title">📊 Algorithm Comparison</div>
+      <div id="compare-table"></div>
+      <button id="btnCloseCompare" class="btn">Close</button>
+    </div>
+
+    <!-- Status bar -->
+    <div id="statusbar">
+      <div class="dot"></div>
+      <span id="status-text">Ready — click on the map to set start point</span>
+      <span id="coord-display"></span>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="ui/js/main.js"></script>
+  </body>
+</html>
